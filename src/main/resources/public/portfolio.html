@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Investor Portfolio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="stylesheet" href="/assets/styles.css"/>
+  <style>
+    /* Force styling as it's not working without*/
+    .bank-card-header {
+      background-color: #0f3d75;
+      color: white;
+      border-top-left-radius: 20px !important;
+      border-top-right-radius: 20px !important;
+      padding: 1rem 1.5rem;
+    }
+    .bank-table-blue thead th {
+      background-color: #0f3d75 !important;
+      color: white !important;
+      border: none;
+    }
+    .chart-container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+  </style>
+</head>
+
+<body class="bank-bg">
+<div class="container py-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="bank-title mb-1">Investor Portfolio</h1>
+      <p class="text-muted mb-0">Viewing ID: <span id="current-id" class="fw-bold">None</span></p>
+    </div>
+    <a href="/" class="btn bank-home-btn">Back to Home</a>
+  </div>
+
+  <div class="row mb-5">
+    <div class="col-md-6">
+      <div class="bank-panel text-center">
+        <small class="text-muted text-uppercase fw-bold">Cash Balance</small>
+        <h2 class="bank-balance">£<span id="balance">0.00</span></h2>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="bank-panel text-center">
+        <small class="text-muted text-uppercase fw-bold">Total Invested</small>
+        <h2 class="bank-balance">£<span id="total-invested-all">0.00</span></h2>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-12 mb-5">
+      <div class="card bank-card">
+        <div class="card-header bank-card-header">
+          <h3 class="mb-0 h5">Current Positions</h3>
+        </div>
+        <div class="card-body p-4">
+          <div class="table-responsive">
+            <table class="table bank-table table-hover align-middle">
+              <thead>
+              <tr>
+                <th>Ticker</th>
+                <th>Sector</th>
+                <th>Country</th>
+                <th>Shares</th>
+                <th>Avg Book Price</th>
+                <th>Total Invested</th>
+              </tr>
+              </thead>
+              <tbody id="positions-list">
+              <tr><td colspan="6" class="text-center py-4">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-5">
+      <div class="card bank-card">
+        <div class="card-header bank-card-header d-flex justify-content-between align-items-center">
+          <h3 class="mb-0 h5">Transaction History</h3>
+          <input type="text" id="tickerFilter" class="form-control w-25 form-control-sm" placeholder="Filter Ticker..." onkeyup="filterTransactions()">
+        </div>
+        <div class="card-body p-0">
+          <div style="max-height: 400px; overflow-y: auto;">
+            <table class="table bank-table table-sm table-hover mb-0">
+              <thead class="sticky-top bank-table-blue">
+              <tr>
+                <th class="ps-4">Date</th>
+                <th>Type</th>
+                <th>Ticker</th>
+                <th>Shares</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th class="pe-4">Capital Gain</th>
+              </tr>
+              </thead>
+              <tbody id="transactions-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 mb-5">
+      <div class="card bank-card">
+        <div class="card-header bank-card-header">
+          <h3 class="mb-0 h5">Allocation Analytics</h3>
+        </div>
+        <div class="card-body p-4 text-center">
+          <div class="d-flex justify-content-center mb-4">
+            <select id="analyticsCategory" class="form-select w-25" onchange="loadAnalytics()">
+              <option value="sector">Sector</option>
+              <option value="country">Country</option>
+              <option value="region">Region</option>
+            </select>
+          </div>
+          <div class="chart-container">
+            <canvas id="portfolioChart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const investorID = params.get("id");
+  let chartInstance = null;
+
+  function filterTransactions() {
+    let input = document.getElementById("tickerFilter").value.toUpperCase();
+    let rows = document.getElementById("transactions-list").getElementsByTagName("tr");
+    for (let i = 0; i < rows.length; i++) {
+      let tickerCell = rows[i].getElementsByTagName("td")[2];
+      if (tickerCell) {
+        rows[i].style.display = (tickerCell.textContent.toUpperCase().indexOf(input) > -1) ? "" : "none";
+      }
+    }
+  }
+
+  async function loadAnalytics() {
+    const category = document.getElementById("analyticsCategory").value;
+    const response = await fetch(`/api/investors/${investorID}/charts/${category}`);
+    const data = await response.json();
+    const ctx = document.getElementById('portfolioChart').getContext('2d');
+    if (chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(data),
+        datasets: [{
+          data: Object.values(data),
+          backgroundColor: ['#0f3d75', '#198754', '#dc3545', '#ffc107', '#0dcaf0', '#6610f2', '#fd7e14']
+        }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+    });
+  }
+
+  async function loadPortfolio() {
+    if (!investorID) return;
+    document.getElementById("current-id").innerText = investorID;
+
+    // Load both portfolio and metadata
+    const [portRes, metaRes] = await Promise.all([
+      fetch(`/api/investors/${investorID}/portfolio`),
+      fetch(`/api/stocks/metadata`)
+    ]);
+
+    const data = await portRes.json();
+    const metaMap = await metaRes.json();
+
+    document.getElementById("balance").innerText = data.cashBalance.toFixed(2);
+    const posList = document.getElementById("positions-list");
+    posList.innerHTML = "";
+    let runningTotalInvested = 0;
+
+    for (let ticker in data.portfolio) {
+      let shares = data.portfolio[ticker];
+      let avgPrice = data.bookPrices[ticker] || 0;
+      let totalSpent = data.totalInvestedMap[ticker] || 0;
+      let meta = metaMap[ticker] || { sector: "Unknown", country: "Unknown" };
+      runningTotalInvested += Number(totalSpent);
+
+      posList.innerHTML += `
+        <tr>
+            <td><strong>${ticker}</strong></td>
+            <td><span class="badge bg-secondary">${meta.sector}</span></td>
+            <td>${meta.country}</td>
+            <td>${shares}</td>
+            <td>£${Number(avgPrice).toFixed(2)}</td>
+            <td>£${Number(totalSpent).toFixed(2)}</td>
+        </tr>`;
+    }
+    document.getElementById("total-invested-all").innerText = runningTotalInvested.toFixed(2);
+
+    const transactionList = document.getElementById("transactions-list");
+    transactionList.innerHTML = "";
+    if (data.history) {
+      data.history.forEach(t => {
+        const pricePerShare = t.shareAmount > 0 ? (t.cashAmount / t.shareAmount).toFixed(2) : "0.00";
+        let gainDisplay = "-";
+        let gainClass = "";
+
+        // Only SELL transactions have capital gains
+        if (t.type === "SELL" && t.capitalGain !== null && t.capitalGain !== undefined) {
+
+          const gain = Number(t.capitalGain);
+
+          gainDisplay = `£${gain.toFixed(2)}`;
+
+          // Colour coding
+          if (gain > 0) gainClass = "text-success fw-bold";
+          if (gain < 0) gainClass = "text-danger fw-bold";
+        }
+
+        transactionList.innerHTML += `
+  <tr>
+      <td><small>${new Date(t.time).toLocaleString('en-GB')}</small></td>
+      <td class="${t.type === 'BUY' ? 'text-success' : 'text-danger'} fw-bold">${t.type}</td>
+      <td><strong>${t.ticker || "-"}</strong></td>
+      <td>${t.shareAmount}</td>
+      <td>£${pricePerShare}</td>
+      <td>£${Number(t.cashAmount).toFixed(2)}</td>
+      <td class="${gainClass}">${gainDisplay}</td>
+  </tr>`;
+      });
+    }
+    loadAnalytics();
+  }
+
+  loadPortfolio();
+</script>
+
+</body>
+</html>

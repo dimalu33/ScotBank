@@ -1,0 +1,136 @@
+body.bank-bg {
+  background: linear-gradient(180deg, #eef3f9 0%, #e7edf6 100%);
+  color: #1e293b;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.bank-title {
+  color: #0f3d75;
+  font-weight: 700;
+}
+
+.bank-card {
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  padding: 6px;
+}
+
+.bank-balance {
+  color: #0f3d75;
+}
+
+.bank-positive {
+  color: #198754;
+}
+
+.bank-negative {
+  color: #dc3545;
+}
+
+.bank-outline {
+  border-color: #0f3d75;
+  color: #0f3d75;
+  border-radius: 12px;
+}
+
+.bank-outline:hover {
+  background-color: #0f3d75;
+  color: white;
+}
+
+.bank-table thead th {
+  color: #475569;
+  font-weight: 600;
+  border-bottom: 1px solid #dbe4ef;
+}
+
+.bank-table tbody td {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.bank-row-deposit {
+  background-color: rgba(25, 135, 84, 0.04);
+}
+
+.bank-row-withdraw {
+  background-color: rgba(220, 53, 69, 0.04);
+}
+
+.bank-home-btn {
+  background-color: white;
+  color: #0a2a5c;
+  border: 2px solid #0a2a5c;
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bank-home-btn:hover {
+  background-color: #0a2a5c;
+  color: white;
+}
+
+.bank-primary {
+  background-color: #0a2a5c;
+  border-color: #0a2a5c;
+  border-radius: 14px;
+  padding: 12px 22px;
+  font-weight: 600;
+  color: white;
+}
+
+.bank-primary:hover {
+  background-color: #081f45;
+  border-color: #081f45;
+  color: white;
+}
+
+.bank-page-section {
+  margin-bottom: 2rem;
+}
+
+.bank-section-title {
+  color: #0f3d75;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.bank-panel {
+  background: white;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  padding: 20px;
+}
+
+.bank-subtle {
+  color: #64748b;
+}
+
+.calculation-box {
+  background-color: #f8fafc;
+  border-left: 4px solid #0f3d75;
+  padding: 15px;
+  border-radius: 12px;
+}
+
+.math-font {
+  font-family: "Courier New", Courier, monospace;
+  font-weight: bold;
+}
+
+.bank-panel {
+  background: white;
+  border: none;
+  border-radius: 20px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+  padding: 20px;
+}
+
+.bank-section-title {
+  color: #0f3d75;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}

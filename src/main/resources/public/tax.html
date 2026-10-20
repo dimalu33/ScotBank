@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tax Report - Investor Portfolio</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/styles.css">
+</head>
+<body class="bank-bg">
+<div class="container py-5">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="bank-title mb-1">Capital Gains Tax Report</h1>
+      <p class="text-muted mb-0">Tax Overview</p>
+    </div>
+    <a href="/" class="btn bank-home-btn">Back to Home</a>
+  </div>
+
+  <p class="text-muted">Viewing ID: <span id="current-id" class="fw-bold">None</span></p>
+
+  <div class="card bank-card mb-5">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background-color:#0f3d75; color:white; border-top-left-radius:20px; border-top-right-radius:20px; padding: 1rem 1.5rem;">
+      <h3 class="mb-0">Tax Summary</h3>
+      <select id="taxYearSelector" class="form-select w-25" onchange="processTaxData()">
+        <option value="2024">2024 Tax Year</option>
+        <option value="2025">2025 Tax Year</option>
+        <option value="2026" selected>2026 Tax Year</option>
+      </select>
+    </div>
+
+    <div class="card-body p-4">
+      <div class="row text-center mb-4 border-bottom pb-3">
+        <div class="col-md-3 border-end text-success">
+          <small class="text-muted text-uppercase fw-bold">Total Profits</small>
+          <h4>£<span id="totalProfits">0.00</span></h4>
+        </div>
+        <div class="col-md-3 border-end text-danger">
+          <small class="text-muted text-uppercase fw-bold">Total Losses</small>
+          <h4>£<span id="totalLosses">0.00</span></h4>
+        </div>
+        <div class="col-md-3 border-end">
+          <small class="text-muted text-uppercase fw-bold">Net Realised Gains</small>
+          <h4>£<span id="netGains">0.00</span></h4>
+        </div>
+        <div class="col-md-3 text-danger">
+          <small class="text-muted text-uppercase fw-bold">Est. Tax Owed</small>
+          <h4>£<span id="taxOwed">0.00</span></h4>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="col-md-6 mb-4">
+          <h6 class="bank-section-title">Calculation Breakdown</h6>
+          <div class="calculation-box">
+            <div class="d-flex justify-content-between"><span>Net Capital Gains:</span> <span class="math-font">£<span id="breakdownNet">0.00</span></span></div>
+            <div class="d-flex justify-content-between text-danger"><span>Capital Gains Allowance:</span> <span class="math-font">-£<span id="breakdownAllowance">3000.00</span></span></div>
+            <hr class="my-1">
+            <div class="d-flex justify-content-between fw-bold"><span>Taxable Gains:</span> <span class="math-font">£<span id="taxableGains">0.00</span></span></div>
+            <div class="d-flex justify-content-between mt-2"><span>Tax Rate:</span> <span class="math-font">24%</span></div>
+            <hr class="my-1">
+            <div class="d-flex justify-content-between text-danger fw-bold"><span>Estimated Tax Owed:</span> <span class="math-font">£<span id="breakdownTax">0.00</span></span></div>
+          </div>
+          <p class="small text-muted mt-2 italic">
+            <i class="bi bi-info-circle"></i>
+            Your tax is calculated by taking your net gains (profits minus losses),
+            subtracting your £3,000 tax-free allowance, and applying a 24% rate to any remaining amount.
+          </p>
+        </div>
+
+        <div class="col-md-6 mb-4">
+          <h6 class="bank-section-title">Allowance Tracker</h6>
+          <div class="bank-panel">
+            <div class="d-flex justify-content-between mb-2">
+              <span>Annual Exemption Used:</span>
+              <span class="fw-bold">£<span id="allowanceUsed">0</span> / £3,000</span>
+            </div>
+            <div class="progress mb-3" style="height: 25px;">
+              <div id="allowanceBar" class="progress-bar bg-success" role="progressbar" style="width: 0%"></div>
+            </div>
+            <div class="text-center">
+              <span class="badge bg-light text-dark border">Remaining Allowance: £<span id="allowanceRemaining">3000.00</span></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h6 class="bank-section-title">Disposal History (Sells)</h6>
+      <table class="table table-hover table-sm">
+        <thead class="table-light">
+        <tr>
+          <th>Date</th>
+          <th>Ticker</th>
+          <th>Shares</th>
+          <th>Sale Proceeds</th>
+          <th>Gain/Loss</th>
+        </tr>
+        </thead>
+        <tbody id="sales-summary">
+        <tr><td colspan="5" class="text-center text-muted">No sell transactions found for this year.</td></tr>
+        </tbody>
+      </table>
+    </div> </div> </div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const investorID = params.get("id");
+  let rawHistory = [];
+
+  async function initTaxPage() {
+    if (!investorID) {
+      document.getElementById("current-id").innerText = "ID Missing!";
+      return;
+    }
+    document.getElementById("current-id").innerText = investorID;
+
+    try {
+      const response = await fetch(`/api/investors/${investorID}/portfolio`);
+      const data = await response.json();
+      rawHistory = data.history || [];
+      processTaxData();
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  }
+
+  function processTaxData() {
+    const selectedYear = document.getElementById("taxYearSelector").value;
+    const salesTable = document.getElementById("sales-summary");
+
+    salesTable.innerHTML = "";
+    let totalProfits = 0;
+    let totalLosses = 0;
+
+    const disposals = rawHistory.filter(t => {
+      const transYear = new Date(t.time).getFullYear();
+      return t.type === "SELL" && transYear == selectedYear;
+    });
+
+    if (disposals.length === 0) {
+      salesTable.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-muted">No disposals found for ${selectedYear}</td></tr>`;
+    }
+
+    disposals.forEach(t => {
+      const gain = Number(t.capitalGain || 0);
+      if (gain > 0) totalProfits += gain;
+      if (gain < 0) totalLosses += gain;
+
+      salesTable.innerHTML += `
+        <tr>
+          <td>${new Date(t.time).toLocaleDateString('en-GB')}</td>
+          <td><strong>${t.ticker}</strong></td>
+          <td>${t.shareAmount}</td>
+          <td>£${Number(t.cashAmount).toFixed(2)}</td>
+          <td class="${gain >= 0 ? 'text-success' : 'text-danger'} fw-bold">
+              £${gain.toFixed(2)}
+          </td>
+        </tr>`;
+    });
+
+    const netGains = totalProfits + totalLosses;
+    const allowance = 3000;
+    const taxable = Math.max(0, netGains - allowance);
+    const tax = taxable * 0.24;
+
+    const used = Math.min(Math.max(0, netGains), allowance);
+    const remaining = Math.max(0, allowance - used);
+    const percent = (used / allowance) * 100;
+
+    document.getElementById("totalProfits").innerText = totalProfits.toFixed(2);
+    document.getElementById("totalLosses").innerText = Math.abs(totalLosses).toFixed(2);
+    document.getElementById("netGains").innerText = netGains.toFixed(2);
+    document.getElementById("taxOwed").innerText = tax.toFixed(2);
+
+    document.getElementById("breakdownNet").innerText = netGains.toFixed(2);
+    document.getElementById("taxableGains").innerText = taxable.toFixed(2);
+    document.getElementById("breakdownTax").innerText = tax.toFixed(2);
+
+    document.getElementById("allowanceUsed").innerText = used.toFixed(2);
+    document.getElementById("allowanceRemaining").innerText = remaining.toFixed(2);
+    document.getElementById("allowanceBar").style.width = percent + "%";
+  }
+
+  initTaxPage();
+</script>
+</body>
+</html>
